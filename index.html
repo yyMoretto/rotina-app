@@ -1,1 +1,551 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="manifest.json">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rotina Semanal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #222222;
+    --border: #2a2a2a;
+    --text: #e8e8e8;
+    --muted: #666;
+    --work: #1d3a5c;
+    --work-t: #7bb8f0;
+    --together: #1a3d2e;
+    --together-t: #6dd4a0;
+    --gym: #3d2800;
+    --gym-t: #f0c060;
+    --content: #27204a;
+    --content-t: #b0a0f8;
+    --rest: #222;
+    --rest-t: #aaa;
+    --done-bg: #0d2a0d;
+    --done-t: #4ae04a;
+    --accent: #ffd700;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  header p {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* Day selector */
+  .days {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .day-btn {
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .day-btn:hover { border-color: var(--accent); color: var(--text); }
+  .day-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+
+  /* Progress bar */
+  .progress-wrap {
+    margin-bottom: 20px;
+  }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .progress-label { font-size: 12px; color: var(--muted); }
+  .progress-count { font-size: 13px; font-weight: 600; color: var(--done-t); }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--done-t);
+    border-radius: 4px;
+    transition: width 0.4s cubic-bezier(.4,0,.2,1);
+    width: 0%;
+  }
+
+  /* Blocks */
+  .block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .block.done-block { border-color: #1f4a1f; background: var(--done-bg); }
+
+  .block-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .block-time {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    min-width: 70px;
+    letter-spacing: 0.04em;
+  }
+
+  .block-label {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    min-width: 100px;
+    text-align: center;
+  }
+
+  .block-fixed-val {
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+    flex: 1;
+  }
+
+  /* Task list inside editable blocks */
+  .block-body { padding: 0 14px 14px; }
+
+  .task-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .task-row:first-child { border-top: none; }
+
+  /* Checkbox */
+  .cb-wrap { padding-top: 2px; }
+
+  input[type="checkbox"] {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border);
+    border-radius: 5px;
+    cursor: pointer;
+    position: relative;
+    background: var(--surface2);
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+
+  input[type="checkbox"]:checked {
+    background: var(--done-t);
+    border-color: var(--done-t);
+  }
+
+  input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 4px; top: 1px;
+    width: 5px; height: 9px;
+    border: 2px solid #000;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg);
+  }
+
+  .task-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed transparent;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    resize: none;
+    outline: none;
+    line-height: 1.5;
+    min-height: 22px;
+    transition: border-color 0.15s, color 0.2s, text-decoration 0.2s;
+    padding: 0;
+  }
+
+  .task-input:focus { border-bottom-color: var(--muted); }
+  .task-input.checked { color: var(--muted); text-decoration: line-through; }
+  .task-input::placeholder { color: #444; }
+
+  .del-btn {
+    background: none;
+    border: none;
+    color: #444;
+    cursor: pointer;
+    font-size: 15px;
+    padding: 0 2px;
+    line-height: 1;
+    transition: color 0.15s;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .del-btn:hover { color: #e05050; }
+
+  .add-task-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: #444;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    padding: 6px 0 0;
+    transition: color 0.15s;
+  }
+  .add-task-btn:hover { color: var(--accent); }
+
+  /* Confetti */
+  .confetti-particle {
+    position: fixed;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    pointer-events: none;
+    animation: confetti-fall 1s ease-out forwards;
+    z-index: 9999;
+  }
+
+  @keyframes confetti-fall {
+    0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(200px) rotate(720deg); opacity: 0; }
+  }
+
+  /* Done celebration */
+  .done-banner {
+    display: none;
+    text-align: center;
+    padding: 16px;
+    background: var(--done-bg);
+    border: 1px solid #1f4a1f;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--done-t);
+    animation: pop 0.3s ease;
+  }
+  .done-banner.show { display: block; }
+
+  @keyframes pop {
+    0% { transform: scale(0.9); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .reset-btn {
+    display: block;
+    margin: 20px auto 0;
+    padding: 8px 20px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .reset-btn:hover { border-color: #e05050; color: #e05050; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Rotina Semanal</h1>
+  <p id="today-label">carregando...</p>
+</header>
+
+<div class="days" id="days"></div>
+
+<div class="progress-wrap">
+  <div class="progress-header">
+    <span class="progress-label">progresso do dia</span>
+    <span class="progress-count" id="prog-count">0 / 0</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+</div>
+
+<div class="done-banner" id="done-banner">🎉 Dia completo! Você mandou bem hoje.</div>
+
+<div id="blocks"></div>
+
+<button class="reset-btn" onclick="resetDay()">↺ Resetar dia</button>
+
+<script>
+const DIAS = ['Segunda','Terça','Quarta','Quinta','Sexta'];
+
+const BLOCOS = [
+  { time:'06h40', label:'Acordar', cat:'rest', fixo:'Acordar, higiene pessoal, preparar para o trabalho' },
+  { time:'07h42 – 12h00', label:'Trabalho manhã', cat:'work', fixo:'Trabalho' },
+  { time:'12h00 – 13h30', label:'Almoço / tarefa', cat:'together', tasks:true, key:'almoco' },
+  { time:'13h30 – 18h25', label:'Trabalho tarde', cat:'work', fixo:'Trabalho' },
+  { time:'18h50 – 19h10', label:'Refeição', cat:'together', fixo:'Jantar juntos' },
+  { time:'19h15 – 20h15', label:'Tarefa de casa', cat:'rest', tasks:true, key:'casa' },
+  { time:'20h20 – 21h20', label:'Conteúdo', cat:'content', tasks:true, key:'conteudo' },
+  { time:'21h30 – 23h15', label:'Academia', cat:'gym', fixo:'Academia juntos' },
+  { time:'23h15+', label:'Pós-treino', cat:'together', fixo:'Assistir juntos, encerrar o dia' },
+];
+
+const CAT_STYLE = {
+  work:    { bg:'var(--work)',    color:'var(--work-t)' },
+  together:{ bg:'var(--together)',color:'var(--together-t)' },
+  gym:     { bg:'var(--gym)',     color:'var(--gym-t)' },
+  content: { bg:'var(--content)', color:'var(--content-t)' },
+  rest:    { bg:'var(--rest)',    color:'var(--rest-t)' },
+};
+
+let activeDay = 0;
+
+function todayIndex() {
+  const d = new Date().getDay();
+  return d >= 1 && d <= 5 ? d - 1 : 0;
+}
+
+function storageKey(day, key, suffix) {
+  return `rotina_${day}_${key}_${suffix}`;
+}
+
+function getTasksForDay(day, key) {
+  const raw = localStorage.getItem(storageKey(day, key, 'tasks'));
+  if (raw) return JSON.parse(raw);
+  const defaults = {
+    almoco: ['Almoçar e descansar'],
+    casa: ['Guardar louça', 'Lavar louça'],
+    conteudo: ['Short #1'],
+  };
+  return (defaults[key] || ['']).map(t => ({ text: t, done: false }));
+}
+
+function saveTasks(day, key, tasks) {
+  localStorage.setItem(storageKey(day, key, 'tasks'), JSON.stringify(tasks));
+}
+
+function renderDays() {
+  const wrap = document.getElementById('days');
+  wrap.innerHTML = '';
+  DIAS.forEach((d, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'day-btn' + (i === activeDay ? ' active' : '');
+    btn.textContent = d;
+    btn.onclick = () => { activeDay = i; renderDays(); renderBlocks(); };
+    wrap.appendChild(btn);
+  });
+}
+
+function renderBlocks() {
+  const wrap = document.getElementById('blocks');
+  wrap.innerHTML = '';
+  let totalTasks = 0, doneTasks = 0;
+
+  BLOCOS.forEach(bloco => {
+    const div = document.createElement('div');
+    div.className = 'block';
+    const style = CAT_STYLE[bloco.cat];
+
+    if (bloco.tasks) {
+      const tasks = getTasksForDay(activeDay, bloco.key);
+      const blockDone = tasks.length > 0 && tasks.every(t => t.done);
+      totalTasks += tasks.length;
+      doneTasks += tasks.filter(t => t.done).length;
+      if (blockDone) div.classList.add('done-block');
+
+      div.innerHTML = `
+        <div class="block-header">
+          <span class="block-time">${bloco.time}</span>
+          <span class="block-label" style="background:${style.bg};color:${style.color}">${bloco.label}</span>
+        </div>
+        <div class="block-body" id="body-${bloco.key}"></div>
+      `;
+      wrap.appendChild(div);
+      renderTasks(bloco.key, tasks, style);
+    } else {
+      div.innerHTML = `
+        <div class="block-header">
+          <span class="block-time">${bloco.time}</span>
+          <span class="block-label" style="background:${style.bg};color:${style.color}">${bloco.label}</span>
+          <span class="block-fixed-val">${bloco.fixo}</span>
+        </div>
+      `;
+      wrap.appendChild(div);
+    }
+  });
+
+  updateProgress(doneTasks, totalTasks);
+}
+
+function renderTasks(key, tasks, style) {
+  const body = document.getElementById('body-' + key);
+  body.innerHTML = '';
+
+  tasks.forEach((task, idx) => {
+    const row = document.createElement('div');
+    row.className = 'task-row';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'cb-wrap';
+    cb.checked = task.done;
+    cb.onchange = () => {
+      tasks[idx].done = cb.checked;
+      saveTasks(activeDay, key, tasks);
+      inp.className = 'task-input' + (cb.checked ? ' checked' : '');
+      if (cb.checked) spawnConfetti(cb);
+      renderBlocks();
+    };
+
+    const inp = document.createElement('textarea');
+    inp.className = 'task-input' + (task.done ? ' checked' : '');
+    inp.value = task.text;
+    inp.placeholder = 'escreva a tarefa...';
+    inp.rows = 1;
+    inp.oninput = () => {
+      inp.style.height = 'auto';
+      inp.style.height = inp.scrollHeight + 'px';
+      tasks[idx].text = inp.value;
+      saveTasks(activeDay, key, tasks);
+    };
+    setTimeout(() => {
+      inp.style.height = 'auto';
+      inp.style.height = inp.scrollHeight + 'px';
+    }, 0);
+
+    const del = document.createElement('button');
+    del.className = 'del-btn';
+    del.innerHTML = '×';
+    del.title = 'remover';
+    del.onclick = () => {
+      tasks.splice(idx, 1);
+      saveTasks(activeDay, key, tasks);
+      renderBlocks();
+    };
+
+    const cbWrap = document.createElement('div');
+    cbWrap.className = 'cb-wrap';
+    cbWrap.appendChild(cb);
+
+    row.appendChild(cbWrap);
+    row.appendChild(inp);
+    row.appendChild(del);
+    body.appendChild(row);
+  });
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-task-btn';
+  addBtn.innerHTML = '+ adicionar tarefa';
+  addBtn.onclick = () => {
+    tasks.push({ text: '', done: false });
+    saveTasks(activeDay, key, tasks);
+    renderBlocks();
+    setTimeout(() => {
+      const inputs = document.querySelectorAll(`#body-${key} .task-input`);
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    }, 50);
+  };
+  body.appendChild(addBtn);
+}
+
+function updateProgress(done, total) {
+  document.getElementById('prog-count').textContent = `${done} / ${total}`;
+  const pct = total > 0 ? (done / total) * 100 : 0;
+  document.getElementById('prog-fill').style.width = pct + '%';
+
+  const banner = document.getElementById('done-banner');
+  if (done > 0 && done === total) {
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
+function spawnConfetti(el) {
+  const rect = el.getBoundingClientRect();
+  const colors = ['#ffd700','#4ae04a','#7bb8f0','#f0c060','#b0a0f8'];
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-particle';
+    p.style.left = (rect.left + Math.random() * 40 - 20) + 'px';
+    p.style.top  = (rect.top  + Math.random() * 10) + 'px';
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    p.style.animationDelay = (Math.random() * 0.2) + 's';
+    p.style.transform = `rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1200);
+  }
+}
+
+function resetDay() {
+  if (!confirm('Resetar todas as tarefas de hoje?')) return;
+  ['almoco','casa','conteudo'].forEach(key => {
+    localStorage.removeItem(storageKey(activeDay, key, 'tasks'));
+  });
+  renderBlocks();
+}
+
+// Today label
+const weekdays = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const now = new Date();
+document.getElementById('today-label').textContent =
+  weekdays[now.getDay()] + ', ' + now.toLocaleDateString('pt-BR');
+
+activeDay = todayIndex();
+renderDays();
+renderBlocks();
+</script>
+</body>
+</html>
